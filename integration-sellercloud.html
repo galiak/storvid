@@ -1,0 +1,317 @@
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Integration with SellerCloud</title>
+    </head>
+
+    <body>
+        <h1>Integration with SellerCloud</h1>
+        <h3>Authentication + Create New Sales Order</h3>
+        <p>
+            <strong>STEP #1: </strong></br>
+            Turn on <code>Dev Mode</code> in the editor
+            <figure>
+                <img src="images/general/general-enable-dev-mode.png" />
+            </figure>
+        </p>
+        <p>
+            <strong>STEP #2: </strong></br>
+            Create a new database collection and name it <code>SellerCloudResponses</code>
+            <figure>
+                <img src="images/general/general-create-collection.png" />
+            </figure>
+        </p>
+        <p>
+            <strong>STEP #3: </strong></br>
+            Add three fields to the collection:</br>
+             - <code>order_number</code> (type: text)</br>
+             - <code>order_data</code> (type: text)</br>
+             - <code>response</code> (type: text)
+            <figure>
+                <img src="images/sellercloud/SC-responses-collection-fields.png" />
+            </figure>
+        </p>
+        <p>
+            <strong>STEP #4: </strong></br>
+            Set the collection permissions:</br>
+             - <code>read content</code> --> Admin</br>
+             - <code>create content</code> --> Anyone</br>
+             - <code>update content</code> --> Admin</br>
+             - <code>delete content</code> --> Admin
+            <figure>
+                <img src="images/sellercloud/SC-assign-permissions.png" />
+            </figure>
+        </p>
+        <p>
+            <strong>STEP #5: </strong></br>
+            Create a dashboard page and give it a name
+            <figure>
+                <img src="images/general/general-create-dashboard-page.png" />
+            </figure>
+        </p>
+        <p>
+            <strong>STEP #6: </strong></br>
+            Navigate to the dashboard page
+            <figure>
+                <img src="images/sellercloud/SC-navigate-to-dashboard.png" />
+            </figure>
+        </p>
+        <p>
+            <strong>STEP #7: </strong></br>
+            Add a title (text --> title) and a table (lists & grids --> table) from the editor's menu.</br>
+            Selecte the table, and click on the <code>Connect to Data</code> button.</br>
+            Choose the <code>SellerCloudResponses dataset</code> to connect the table to the data.
+            <p>
+                <figure>
+                    <img src="images/sellercloud/SC-connect-table-to-data.png" />
+                </figure>
+            </p>
+        </p>
+        <p>
+            <strong>STEP #8: </strong></br>
+            Navigate to the <code>Thank You</code> page
+            <ul>
+                <li>In the page's code panel add the code below:</li>
+                <li> - in the function <code>createDataForSellercloud</code> replace <code><em>YOUR_COMPANY_ID</em></code> with your SellerCloud company id.</li>
+                <li> - in the function <code>createDataForSellercloud</code> replace <code>MarketingSource</code> with your SellerCloud settings (e.g.: 0 for local store, 6 for website).</li> 
+                <li> - in the function <code>createDataForSellercloud</code> replacee <code>Channel</code> with your SellerCloud settings (e.g.: "Local_Store", "Website").</li>
+            </ul>
+            <figure>
+                <img src="images/sellercloud/SC-thank-you-page-code.png" />
+            </figure>
+            <pre>
+                <code>
+                    import {authenticate, createNewSalesOrder} from 'backend/sellercloud.jsw';
+                    import wixData from 'wix-data';
+                    
+                    let order = {};
+                </code>
+            </pre>
+            <pre>
+                <code>
+                    $w.onReady(function () {
+                        $w('#pageApp1').getOrder()
+                        .then((result) => {
+                            order = result;
+                            sendOrderToSellerCloud();
+                        });
+                    });
+                </code>
+            </pre>
+            <pre>
+                <code>        
+                    function sendOrderToSellerCloud() {
+                        let postData = null;
+                        authenticate()
+                            .then(response => {
+                                if (response.access_token) {
+                                    postData = createDataForSellercloud(order);
+                                    createNewSalesOrder(response.access_token, postData)
+                                    .then(result => {
+                                        collectResponses(postData, result)
+                                    });
+                                } else if (response.error) {
+                                    collectResponses(postData, response);
+                                }
+                            });
+                    }
+                </code>
+            </pre>      
+            <pre>
+                <code>
+                    function createProductsData(lineItems) {
+                        const copy = [];
+                        lineItems.forEach(function(item) {
+                            copy.push({
+                                "ProductID": item.sku,
+                                "ProductName": item.name,
+                                "SitePrice": item.price,
+                                "Qty": item.quantity
+                            })
+                        });
+                        return copy;
+                    }
+                </code>
+            </pre>
+            <pre>
+                <code>   
+                    function createDataForSellercloud(orderData) {
+                        return {
+                            "ID": orderData.number, 
+                            "CustomerDetails": { // required
+                                "ID": orderData.buyerInfo.id // unique customer number in SellerCloud system
+                                "Email": orderData.buyerInfo.email,
+                                "FirstName": orderData.buyerInfo.firstName,
+                                "LastName": orderData.buyerInfo.lastName,
+                                "Business": orderData.billingInfo.company,
+                                "IsWholesale": false
+                            },
+                            "OrderDetails": { // required
+                                "CompanyID": <em>YOUR_COMPANY_ID</em>,
+                                "MarketingSource": <em>0</em>,
+                                "SalesRepresentative": 0,
+                                "TaxExempt": false,
+                                "GiftOrder": false,
+                                "Channel": <em>"Local_Store"</em>, 
+                                "OrderSourceOrderID": orderData.number
+                            },
+                            "Products": createProductsData(orderData.lineItems),
+                            "ShippingAddress": {
+                                "Business": orderData.shippingInfo.shipmentDetails.company,
+                                "FirstName": orderData.shippingInfo.shipmentDetails.firstName,
+                                "LastName": orderData.shippingInfo.shipmentDetails.lastName,
+                                "Country": orderData.shippingInfo.shipmentDetails.address.country,
+                                "City": orderData.shippingInfo.shipmentDetails.address.city,
+                                "State": orderData.shippingInfo.shipmentDetails.address.subdivision,
+                                "ZipCode": orderData.shippingInfo.shipmentDetails.address.postalCode,
+                                "Address": orderData.shippingInfo.shipmentDetails.address.addressLine,
+                                "Phone": orderData.shippingInfo.shipmentDetails.phone
+                            },
+                            "BillingAddress": {
+                                "Business": orderData.billingInfo.company,
+                                "FirstName": orderData.billingInfo.firstName,
+                                "LastName": orderData.billingInfo.lastName,
+                                "Country": orderData.billingInfo.address.country,
+                                "City": orderData.billingInfo.address.city,
+                                "State": orderData.billingInfo.address.subdivision,
+                                "ZipCode": orderData.billingInfo.address.postalCode,
+                                "Address": orderData.billingInfo.address.addressLine,
+                                "Phone": orderData.billingInfo.phone
+                            },
+                            "ShippingMethodDetails": {
+                                "ShippingMethod": orderData.shippingInfo.deliveryOption,
+                                "ShippingFee": orderData.totals.shipping
+                            },
+                            "PaymentDetails": {
+                                "Method": orderData.billingInfo.paymentMethod,
+                                "TransactionID": orderData.billingInfo.externalTransactionId ? orderData.billingInfo.externalTransactionId : "MANUAL PAYMENT"
+                            },
+                            "Notes": [{
+                                "Note": orderData.buyerNote ? orderData.buyerNote : "",
+                                "AuditDate": orderData._dateCreated ? orderData._dateCreated : ""
+                            }],
+                            "DiscountTotal": orderData.totals.discount
+                        }
+                    }
+                </code>
+            </pre>
+            <pre>
+                <code>    
+                    function collectResponses(postData, response) {
+                        let toInsert = {
+                            "response": JSON.stringify(response),
+                            "order_number": "" + postData.OrderDetails.OrderSourceOrderID,
+                            "order_data": JSON.stringify(postData)
+                        };
+                    
+                        wixData.insert("SellerCloudResponses", toInsert)
+                            .then((results) => {
+                                console.log(results);
+                            })
+                            .catch((err) => {
+                                console.log(err);
+                            });
+                    }
+                </code>
+            </pre>
+        </p>
+        <p>
+            <strong>STEP #9: </strong></br>
+            Add a backend file and name it <code>sellercloud.jsw</code>
+            <figure>
+                <img src="images/sellercloud/SC-create-backend-file.png" />
+            </figure>
+            <ul>
+                <li>Add the code below :</li>
+                <li> - Replace <code><em>YOUR_SERVER_NAME</em></code> with your SellerCloud server name (x2).</li> 
+                <li> - Replace <code><em>YOUR_SELLERCLOUD_USERNAME</em></code> with your SellerCloud username.</li>
+                <li> - Replace <code><em>YOUR_SELLERCLOUD_PASSWORD</em></code> with with your SellerCloud password.</li>
+            </ul>
+            <pre>
+                <code>
+                    import { fetch } from 'wix-fetch';
+                    import wixData from 'wix-data';
+                </code>
+            </pre>
+            <pre>
+                <code>
+                    export function authenticate() {
+                        const url = "https://<em>YOUR_SERVER_NAME</em>.api.sellercloud.com/rest/api/token";
+                    
+                        const headers = {
+                            "Content-Type": "application/json"
+                        };
+                    
+                        const postData = {
+                            "Username": <em>"YOUR_SELLERCLOUD_USERNAME"</em>,
+                            "Password": <em>"YOUR_SELLERCLOUD_PASSWORD"</em>
+                        };
+                    
+                        return fetch(url, {
+                                method: "post",
+                                headers: headers,
+                                body: JSON.stringify(postData)
+                            })
+                            .then(response => response.json());
+                    }
+                </code>
+            </pre>
+            <pre>
+                <code>
+                    export function createNewSalesOrder(accessToken, postData) {
+                        const url = "https://<em>YOUR_SERVER_NAME</em>.api.sellercloud.com/rest/api/Orders/";
+                    
+                        const headers = {
+                            "Authorization": "Bearer " + accessToken,
+                            "Content-Type": "application/json"
+                        };
+                    
+                        return fetch(url, {
+                            method: 'post',
+                            headers: headers,
+                            body: JSON.stringify(postData)
+                        })
+                        .then(response => response.json());
+                    }
+                </code>
+            </pre>
+        </p>
+        <p>
+            <strong>STEP #10: </strong></br>
+            Save the site and create <code>Release Candidate</code>, by clicking on <code>Create Release Candidate</code>.
+            <figure>
+                <img src="images/general/general-create-rc.png" />
+            </figure>
+        </p>
+        <p>
+            <strong>STEP #11: </strong></br>
+            Navigate to the Store Manager: <code>Settings --> Production Tools --> Release Manager</code>
+            <figure>
+                <img src="images/general/general-navigate-to-release-manager.png" />
+            </figure> 
+        </p>
+        <p>
+            <strong>STEP #12: </strong></br>
+            Open the release candidate and perform a test purchase to test the complete flow (recomended: use manual payment for this test).
+            <figure>
+                <img src="images/general/general-view-rc.png" />
+            </figure> 
+        </p>
+        <p>
+            <strong>STEP #13: </strong></br>
+            Publish.
+        </p>
+        <p>
+            <ul>
+                <li><strong>Resources:</strong></li>
+                <li><a href="https://www.sellercloud.com/" target=_blank"">Website: SellerCloud (Inventory Management Software)</a></li>
+                <li>
+                    <a href="https://developer.sellercloud.com/article/znpjet8bqh-authentication" target="_blank">Authentication API</a>
+                </li>
+                <li>
+                    <a href="https://developer.sellercloud.com/article/abxwkewi3e-create-new-sales-order" target="_blank">Create New Sales Order API</a>
+                </li>
+            </ul>
+        </p>
+    </body>
+</html>

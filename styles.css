@@ -1,0 +1,33 @@
+body {
+  font-family: Verdana;
+  color: #525252;
+}
+
+pre {
+  background-color: #ECF1EF;
+}
+
+code {
+  font-family: Courier;
+  color: #483D8B;
+}
+
+code em {
+  color: #EE3B3B;
+}
+
+p {
+  margin-top: 30px;
+}
+
+ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+img {
+  border: 1px solid #ECF1EF;
+  border-radius: 4px;
+  padding: 5px;
+  width: 500px;
+}
