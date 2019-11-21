@@ -8,7 +8,111 @@
     <body>
         <h1>Integration with Share A Sale</h1>
         <p>
-          Coming Soon...
+            <strong>STEP #1: </strong></br>
+            Turn on <code>Dev Mode</code> in the editor
+            <figure>
+                <img src="images/general/general-enable-dev-mode.png" />
+            </figure>
+        </p>
+        <p>
+            <strong>STEP #2: </strong></br>
+            Add the code below to the <code>Product</code> page code panel
+            <figure>
+                <img src="images/general/general-product-code-panel.png" />
+            </figure>
+            <pre>
+              <code>
+                  import wixLocation from 'wix-location';
+                  import {session} from 'wix-storage';
+              </code>
+            </pre>
+            <pre>
+              <code>
+                  $w.onReady(async function () {
+                    session.clear();
+                    let sasId = wixLocation.query;
+                    session.setItem("sasId", sasId.sscid);
+                 });                 
+              </code>
+            </pre>
+        </p>
+        <p>
+            <strong>STEP #3: </strong></br>
+            Add an image to the <code>Thank You</code> page.</br>
+            Right-click on the component and choose <code>View Properties</code> to open the properties panel.
+            <figure>
+                <img src="images/general/general-view-properties.png" />
+            </figure>
+            Check <code>Hidden on load</code> in the <code>Properties</code> panel.
+            <figure>
+              <img src="images/shareasale/sas-hidden-onload.png" />
+            </figure>
+            Change the component id to <code>sasImage</code>.
+            <figure>
+              <img src="images/shareasale/sas-image-id.png" />
+            </figure>
+        </p>
+        <p>
+            <strong>STEP #4: </strong></br>
+            <ul>
+                <li>Add the code below to the <code>Thank You</code> page code panel:</li>
+                <li> - Replace <code><em>YOUR_MERCHANT_ID</em></code> with your Share A Sale merchant id.</li>
+            </ul>
+            <figure>
+              <img src="images/general/general-thankyou-code-panel.png" />
+            </figure>
+            <pre>
+              <code>
+                  import wixStores from 'wix-stores';
+                  import {session} from 'wix-storage';
+                  
+                  const merchantID = <em>YOUR_MERCHANT_ID</em>;
+                  let ClickID = '';                  
+              </code>
+            </pre>
+            <pre>
+              <code>
+                  $w.onReady(function () {
+                    $w('#thankYouPage1').getOrder()
+                        .then((order) => {
+                            console.log('order=', order);
+                            ClickID = session.getItem('sasId');
+                            const sasPixel = 'https://www.shareasale.com/sale.cfm?tracking=' + order._id +'&amount=' + order.totals.subtotal +'&merchantID=' + merchantID + '&transtype=sale&sscidmode=6&sscid=' + ClickID
+                            $w('#sasImage').src = sasPixel;
+                        });
+                 });                 
+              </code>
+            </pre>
+        </p>
+        <p>
+            <strong>STEP #5: </strong></br>
+            Add an <code>HTML Component</code>
+            <figure>
+              <img src="images/general/general-html-component.png" />
+            </figure>
+            Select the component, click on <code>Enter Code</code> and add the following line
+            <figure>
+              <img src="images/shareasale/sas-analytics.png" />
+            </figure>
+            <pre>
+                <code>
+                    &lt;script defer async type="text/javascript" src="https://shareasale-analytics.com/j.js">&lt;/script&gt;
+                </code> 
+            </pre>
+        </p>
+        <p>
+            <strong>STEP #6: </strong></br>
+            Publish.
+        </p>
+        <p>
+            <strong>STEP #7: </strong></br>
+            Test a purchase with Share A Sale test page.
+        </p>
+        <p>
+            <ul>
+                <li><strong>Resources:</strong></li>
+                <li><a href="https://www.shareasale.com/" target=_blank"">Website: Share A Sale</a></li>
+            </ul>
         </p>
     </body>
 </html>
