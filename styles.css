@@ -1,9 +1,10 @@
 body {
-  font-family: Verdana;
+  /* font-family: Verdana; */
   color: #525252;
+  padding: 10px;
 }
 
-pre {
+/* pre {
   background-color: #ECF1EF;
 }
 
@@ -30,4 +31,4 @@ img {
   border-radius: 4px;
   padding: 5px;
   width: 500px;
-}
+} */
