@@ -4,6 +4,10 @@ body {
   padding: 10px;
 }
 
+code {
+  color: #0000FF;
+}
+
 code em {
   color: #EE3B3B;
 }

@@ -8,8 +8,179 @@
 
     <body>
         <h1>Back In Stock Notification</h1>
+        <h3><a href="https://galiak.wixsite.com/stock-notification/shop-all" target="_blank">Live example</a></h3>
         <p>
-          Coming Soon...
+            <strong>STEP #1: </strong></br>
+            Turn on <code>Dev Mode</code> in the editor
+            <figure>
+                <img src="images/general/general-enable-dev-mode.png" />
+            </figure>
+        </p>
+        <p>
+            <strong>STEP #2: </strong></br>
+            Create a new database collection and name it <code>back_in_stock</code>.</br>
+            Set Permission:</br>
+            <ul>
+                <li>Read content --> Anyone</li>
+                <li>Create content --> Anyone</li>
+                <li>Update content --> Admin</li>
+                <li>Delete content --> Admin</li>
+            </ul>
+            Add these fields:</br>
+            <ul>
+                <li>Email --> text (set as main)</li>
+                <li>Name --> text</li>
+                <li>Product --> reference tp <code>Products</code></li>
+                <li>Sent --> boolean</li>
+            </ul>
+        </p>
+        <p>
+            <strong>STEP #3: </strong></br>
+            Setup the <code>Product page</code>.</br>
+            Add a button, in the properties panel set the <code>id</code> to <code>notifyMe</code>,</br>
+            Set <code>notifyMe_click</code>.</br>
+            In the code panel add the code below:
+            <pre>
+                <code>
+                    import wixWindow from 'wix-window';
+
+                    let product;
+                        
+                    $w.onReady(async function () {
+                        product = await $w('#productPage1').getProduct();
+                        checkStock();
+                    });
+                        
+                    async function checkStock() {
+                        if (product.inStock) {
+                            $w('#notifyMe').hide();
+                        } else {
+                            $w('#notifyMe').show('fade', {duration: 100});
+                        }
+                    }
+                        
+                    export async function notifyMe_click() {
+                        const dataForLightbox = {
+                            productId: product._id,
+                            productImage: product.mainMedia
+                        };
+                        let result = await wixWindow.openLightbox('Back in Stock', dataForLightbox);
+                    }
+                </code>
+            </pre>
+        </p>
+        <p>
+            <strong>STEP #4: </strong></br>
+            Add a lightbox:</br>
+            <ul>
+                <li>Name the lightbox <code>Back in Stock</code>.</li>
+                <li>Set the automatic display trigger to  <code>No</code>.</li>
+            </ul>
+            Add two user inputs and a button. Set each component and change their ids:</br>
+            <ul>
+                <li>Input for name --> name</li>
+                <li>Input for email --> email</li>
+                <li>Submit button --> submit</li>
+            </ul>
+            Add the code below:
+            <pre>
+                <code>
+                    import wixWindow from 'wix-window';
+                    import wixData from 'wix-data';
+                        
+                    let product;
+                        
+                    $w.onReady(function () {
+                        product = wixWindow.lightbox.getContext();
+                        $w('#productImage').src = product.productImage;
+                    });
+                        
+                    export function registerNotification() {
+                        let data = {
+                            product: product.productId,
+                            name: $w('#name').value, // name
+                            email: $w('#email').value // email
+                        };
+                        
+                        wixData.insert('back_in_stock', data)
+                            .then((results) => {
+                                wixWindow.lightbox.close();
+                            })
+                            .catch((err) => {
+                                console.log(err);
+                            });
+                    }
+                </code>
+            </pre>
+        </p>
+        <p>
+            <strong>STEP #5: </strong></br>
+            Add a ne dashboard page.</br>
+            Add these components:</br>
+            <ul>
+                <li>Title --> Back in stock notification list</li>
+                <li>User input --> set the id to <code>search</code></li>
+                <li>Button --> add <code>onClick</code> event in the properties panel <code>searchButton_onClick</code></li>
+                <li>Dataset --> connect to <code>back_in_stock</code> collection</li>
+                <li>Table --> connect it to the dataset. and add the product columns you need</li>
+            </ul>
+            Add the code below to the code panel:</br>
+            <pre>
+                <code>
+                    import wixData from 'wix-data';
+
+                    $w.onReady(function () {
+                        $w('#dataset1').setCurrentItemIndex(0);
+                        $w('#dataset1').setFilter(wixData.filter().ne('sent', true));
+                        $w('#table1').onRowSelect((event) => {
+                        if (!event.rowData.sent) {
+                            event.rowData.sent = true;
+                            $w('#table1').updateRow(event.rowIndex, event.rowData);
+                        }
+                        });
+                        
+                        $w('#dataset1').onCurrentIndexChanged((event) => {
+                        let itemData = $w('#dataset1').getCurrentItem();
+                        if (!itemData.sent) {
+                            itemData.sent = true;
+                            wixData.update('back_in_stock', itemData)
+                            .then((results) => {
+                                console.log(results);
+                            })
+                            .catch( (err) => {
+                                console.log(err);
+                            });
+                        }
+                        });
+                    });
+                        
+                    export function searchButton_onClick(event) {
+                        wixData.query('back_in_stock')
+                        .contains('name', $w('#input1').value)
+                        .find()
+                        .then(res => {
+                            $w('#table1').rows = res.items;
+                        });
+                    }
+                </code>
+            </pre>
+        </p>
+        <p>
+            <strong>Notes: </strong></br>
+            <ul>
+                <li>
+                    Clicking on a row sets <code>sent notification</code> column to <code>true</code></br>
+                    By default the table will show only the items where “sent notification” is false.</br>
+                    This can be changed by deleting the line</br>
+                    <code>$w('#dataset1').setFilter(wixData.filter().ne('sent', true));</code>
+                </li>
+                <li>
+                    The search can be changed to any other field, by changing the field name in the <code>searchButton_onClick</code> function. For example:</br> 
+                    <code>.contains('name', $w('#search').value)</code></br>
+                    <code>.contains('sku', $w('#search').value)</code>
+                        
+                </li>
+            </ul>
         </p>
     </body>
 </html>
