@@ -71,155 +71,146 @@
         </p>
         <p>
             <strong>STEP #8: </strong></br>
-            Navigate to the <code>Thank You</code> page
+            Create <code>events.js</code> file under the <code>Backend</code> section, and add the code below:
             <ul>
                 <li>In the page's code panel add the code below:</li>
-                <li> - in the function <code>createDataForSellercloud</code> replace <code><em>YOUR_COMPANY_ID</em></code> with your SellerCloud company id.</li>
                 <li> - in the function <code>createDataForSellercloud</code> replace <code>MarketingSource</code> with your SellerCloud settings (e.g.: 0 for local store, 6 for website).</li> 
                 <li> - in the function <code>createDataForSellercloud</code> replacee <code>Channel</code> with your SellerCloud settings (e.g.: "Local_Store", "Website").</li>
             </ul>
-            <figure>
-                <img src="images/sellercloud/SC-thank-you-page-code.png" />
-            </figure>
             <pre>
                 <code>
-                    import {authenticate, createNewSalesOrder} from 'backend/sellercloud.jsw';
-                    import wixData from 'wix-data';
-                    
-                    let order = {};
-                </code>
-            </pre>
-            <pre>
-                <code>
-                    $w.onReady(function () {
-                        $w('#pageApp1').getOrder()
-                        .then((result) => {
-                            order = result;
-                            sendOrderToSellerCloud();
-                        });
-                    });
-                </code>
-            </pre>
-            <pre>
-                <code>        
-                    function sendOrderToSellerCloud() {
-                        let postData = null;
-                        authenticate()
-                            .then(response => {
-                                if (response.access_token) {
-                                    postData = createDataForSellercloud(order);
-                                    createNewSalesOrder(response.access_token, postData)
-                                    .then(result => {
-                                        collectResponses(postData, result)
-                                    });
-                                } else if (response.error) {
-                                    collectResponses(postData, response);
-                                }
-                            });
-                    }
-                </code>
-            </pre>      
-            <pre>
-                <code>
-                    function createProductsData(lineItems) {
-                        const copy = [];
-                        lineItems.forEach(function(item) {
-                            copy.push({
-                                "ProductID": item.sku,
-                                "ProductName": item.name,
-                                "SitePrice": item.price,
-                                "Qty": item.quantity
-                            })
-                        });
-                        return copy;
-                    }
-                </code>
-            </pre>
-            <pre>
-                <code>   
-                    function createDataForSellercloud(orderData) {
-                        return {
-                            "ID": orderData.number, 
-                            "CustomerDetails": { // required
-                                "ID": orderData.buyerInfo.id // unique customer number in SellerCloud system
-                                "Email": orderData.buyerInfo.email,
-                                "FirstName": orderData.buyerInfo.firstName,
-                                "LastName": orderData.buyerInfo.lastName,
-                                "Business": orderData.billingInfo.company,
-                                "IsWholesale": false
-                            },
-                            "OrderDetails": { // required
-                                "CompanyID": <em>YOUR_COMPANY_ID</em>,
-                                "MarketingSource": <em>0</em>,
-                                "SalesRepresentative": 0,
-                                "TaxExempt": false,
-                                "GiftOrder": false,
-                                "Channel": <em>"Local_Store"</em>, 
-                                "OrderSourceOrderID": orderData.number
-                            },
-                            "Products": createProductsData(orderData.lineItems),
-                            "ShippingAddress": {
-                                "Business": orderData.shippingInfo.shipmentDetails.company,
-                                "FirstName": orderData.shippingInfo.shipmentDetails.firstName,
-                                "LastName": orderData.shippingInfo.shipmentDetails.lastName,
-                                "Country": orderData.shippingInfo.shipmentDetails.address.country,
-                                "City": orderData.shippingInfo.shipmentDetails.address.city,
-                                "State": orderData.shippingInfo.shipmentDetails.address.subdivision,
-                                "ZipCode": orderData.shippingInfo.shipmentDetails.address.postalCode,
-                                "Address": orderData.shippingInfo.shipmentDetails.address.addressLine,
-                                "Phone": orderData.shippingInfo.shipmentDetails.phone
-                            },
-                            "BillingAddress": {
-                                "Business": orderData.billingInfo.company,
-                                "FirstName": orderData.billingInfo.firstName,
-                                "LastName": orderData.billingInfo.lastName,
-                                "Country": orderData.billingInfo.address.country,
-                                "City": orderData.billingInfo.address.city,
-                                "State": orderData.billingInfo.address.subdivision,
-                                "ZipCode": orderData.billingInfo.address.postalCode,
-                                "Address": orderData.billingInfo.address.addressLine,
-                                "Phone": orderData.billingInfo.phone
-                            },
-                            "ShippingMethodDetails": {
-                                "ShippingMethod": orderData.shippingInfo.deliveryOption,
-                                "ShippingFee": orderData.totals.shipping
-                            },
-                            "PaymentDetails": {
-                                "Method": orderData.billingInfo.paymentMethod,
-                                "TransactionID": orderData.billingInfo.externalTransactionId ? orderData.billingInfo.externalTransactionId : "MANUAL PAYMENT"
-                            },
-                            "Notes": [{
-                                "Note": orderData.buyerNote ? orderData.buyerNote : "",
-                                "AuditDate": orderData._dateCreated ? orderData._dateCreated : ""
-                            }],
-                            "DiscountTotal": orderData.totals.discount
+                        import wixData from 'wix-data';
+                        import {authenticate, createNewSalesOrder} from 'backend/sellercloud.jsw';
+                        
+                        
+                        function getFullOrder(orderId) {
+                           return wixData.get("Stores/Orders", orderId);
                         }
-                    }
-                </code>
-            </pre>
-            <pre>
-                <code>    
-                    function collectResponses(postData, response) {
-                        let toInsert = {
-                            "response": JSON.stringify(response),
-                            "order_number": "" + postData.OrderDetails.OrderSourceOrderID,
-                            "order_data": JSON.stringify(postData)
-                        };
-                    
-                        wixData.insert("SellerCloudResponses", toInsert)
-                            .then((results) => {
-                                console.log(results);
-                            })
-                            .catch((err) => {
-                                console.log(err);
+                        
+                        export function wixStores_onNewOrder(event) {
+                            console.log(event.orderId);
+                        
+                            getFullOrder(event.orderId)
+                                .then(order => {
+                                    console.log('order=', order);
+                                    sendOrderToSellerCloud(order);
+                                });
+                        }
+                        
+                        function sendOrderToSellerCloud(order) {
+                            let postData = null;
+                            authenticate()
+                                .then(response => {
+                                    console.log(response);
+                                    if (response.access_token) {
+                                        postData = createDataForSellercloud(order);
+                                        createNewSalesOrder(response.access_token, postData)
+                                        .then(result => {
+                                            console.log(result);
+                                            collectResponses(postData, result)
+                                        });
+                                    } else if (response.error) {
+                                        console.log(response.error.message);
+                                        collectResponses(postData, response);
+                                    }
+                                });
+                        }
+                        
+                        function createProductsData(lineItems) {
+                            const copy = [];
+                            lineItems.forEach(function(item) {
+                                copy.push({
+                                    "ProductID": item.sku,
+                                    "ProductName": item.name,
+                                    "SitePrice": item.price,
+                                    "Qty": item.quantity
+                                })
+                                console.log(item);
                             });
-                    }
+                            return copy;
+                        }
+                        
+                        // https://developer.sellercloud.com/article/abxwkewi3e-create-new-sales-order
+                        function createDataForSellercloud(orderData) {
+                            return {
+                                "ID": 0, 
+                                "CustomerDetails": { // required
+                                    "ID": 0, //orderData.buyerInfo.id ? unique customer number in SellerCloud system
+                                    "Email": orderData.buyerInfo.email,
+                                    "FirstName": orderData.buyerInfo.firstName,
+                                    "LastName": orderData.buyerInfo.lastName,
+                                    "Business": orderData.billingInfo.company,
+                                    "IsWholesale": false
+                                },
+                                "OrderDetails": { // required
+                                    "CompanyID": 0,
+                                    "MarketingSource": <em>0</em>,
+                                    "SalesRepresentative": 0,
+                                    "TaxExempt": false,
+                                    "GiftOrder": false,
+                                    "Channel": "<em>Local_Store</em>",
+                                    "OrderSourceOrderID": orderData.number
+                                },
+                                "Products": createProductsData(orderData.lineItems),
+                                "ShippingAddress": {
+                                    "Business": orderData.shippingInfo.shipmentDetails.company,
+                                    "FirstName": orderData.shippingInfo.shipmentDetails.firstName,
+                                    "LastName": orderData.shippingInfo.shipmentDetails.lastName,
+                                    "Country": orderData.shippingInfo.shipmentDetails.address.country,
+                                    "City": orderData.shippingInfo.shipmentDetails.address.city,
+                                    "State": orderData.shippingInfo.shipmentDetails.address.subdivision,
+                                    "ZipCode": orderData.shippingInfo.shipmentDetails.address.postalCode,
+                                    "Address": orderData.shippingInfo.shipmentDetails.address.addressLine,
+                                    "Phone": orderData.shippingInfo.shipmentDetails.phone
+                                },
+                                "BillingAddress": {
+                                    "Business": orderData.billingInfo.company,
+                                    "FirstName": orderData.billingInfo.firstName,
+                                    "LastName": orderData.billingInfo.lastName,
+                                    "Country": orderData.billingInfo.address.country,
+                                    "City": orderData.billingInfo.address.city,
+                                    "State": orderData.billingInfo.address.subdivision,
+                                    "ZipCode": orderData.billingInfo.address.postalCode,
+                                    "Address": orderData.billingInfo.address.addressLine,
+                                    "Phone": orderData.billingInfo.phone
+                                },
+                                "ShippingMethodDetails": {
+                                    "ShippingMethod": orderData.shippingInfo.deliveryOption,
+                                    "ShippingFee": orderData.totals.shipping
+                                },
+                                "PaymentDetails": {
+                                    "Method": orderData.billingInfo.paymentMethod,
+                                    "TransactionID": orderData.billingInfo.externalTransactionId ? orderData.billingInfo.externalTransactionId : "MANUAL PAYMENT"
+                                },
+                                "Notes": [{
+                                    "Note": orderData.buyerNote ? orderData.buyerNote : "",
+                                    "AuditDate": orderData._dateCreated ? orderData._dateCreated : ""
+                                }],
+                                "DiscountTotal": orderData.totals.discount
+                            }
+                        }
+                        
+                        function collectResponses(postData, response) {
+                            let toInsert = {
+                                "response": JSON.stringify(response),
+                                "order_number": "" + postData.OrderDetails.OrderSourceOrderID,
+                                "order_data": JSON.stringify(postData)
+                            };
+                        
+                            wixData.insert("SellerCloudResponses", toInsert)
+                                .then((results) => {
+                                    console.log(results);
+                                })
+                                .catch((err) => {
+                                    console.log(err);
+                                });
+                        }
                 </code>
             </pre>
         </p>
         <p>
             <strong>STEP #9: </strong></br>
-            Add a backend file and name it <code>sellercloud.jsw</code>
+            Add a new web module named <code>sellercloud.jsw</code> under the <code>Backend</code> section.
             <figure>
                 <img src="images/sellercloud/SC-create-backend-file.png" />
             </figure>
@@ -304,15 +295,11 @@
             Publish.
         </p>
         <p>
+            <strong>Resources: </strong></br>
             <ul>
-                <li><strong>Resources:</strong></li>
-                <li><a href="https://www.sellercloud.com/" target=_blank"">Website: SellerCloud (Inventory Management Software)</a></li>
-                <li>
-                    <a href="https://developer.sellercloud.com/article/znpjet8bqh-authentication" target="_blank">Authentication API</a>
-                </li>
-                <li>
-                    <a href="https://developer.sellercloud.com/article/abxwkewi3e-create-new-sales-order" target="_blank">Create New Sales Order API</a>
-                </li>
+                <li><a href="https://www.sellercloud.com/" target="_blank">Website: SellerCloud (Inventory Management Software)</a></li>
+                <li><a href="https://developer.sellercloud.com/article/znpjet8bqh-authentication" target="_blank">Authentication API</a></li>
+                <li><a href="https://developer.sellercloud.com/article/abxwkewi3e-create-new-sales-order" target="_blank">Create New Sales Order API</a></li>
             </ul>
         </p>
     </body>

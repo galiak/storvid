@@ -9,7 +9,122 @@
     <body>
         <h1>Integration with StarshipIT</h1>
         <p>
-          Coming Soon...
+            <strong>STEP #1: </strong></br>
+            Turn on <code>Dev Mode</code> in the editor
+            <figure>
+                <img src="images/general/general-enable-dev-mode.png" />
+            </figure>
+        </p>
+        <p>
+            <strong>STEP #2: </strong></br>
+            Create a new web module named <code>starShipIt.jsw</code> under the <code>Backend</code> section,
+            and add the code below:
+            <ul>
+                <li> - Replace <code><em>YOUR_STARSHIPIT_API_KEY</em></code> with your StarSHipIT <code>StarShipIT-Api-Key</code>.</li>
+                <li> - Replace <code><em>YOUR_OCP_APIM_SUBSCRIPTION_KEY</em></code> with your StarSHipIT <code>Ocp-Apim-Subscription-Key</code>.</li>
+            </ul>
+            <pre>
+                <code>
+                    import { fetch } from 'wix-fetch';
+                    import wixData from 'wix-data';
+
+                    export function createOrder(order) {
+                        const url = "https://api.starshipit.com/api/orders";
+                        let lineItems = [];
+                        const name = order.shippingInfo.shipmentDetails.firstName + " " + order.shippingInfo.shipmentDetails.lastName;
+
+                        const headers = {
+                            "StarShipIT-Api-Key": "<em>YOUR_STARSHIPIT_API_KEY</em>",
+                            "Content-type": "application/json",
+                            "Ocp-Apim-Subscription-Key": "<em>YOUR_OCP_APIM_SUBSCRIPTION_KEY</em>"
+
+                        };
+
+                        order.lineItems.forEach(function(item){
+                            const product = {
+                                "description": item.name,
+                                "sku": item.sku,
+                                "quantity": item.quantity,
+                                "weight": item.weight,
+                                "value": item.price
+                            }
+                            lineItems.push(product);
+                        });
+
+                        const data = {
+                            "order": {
+                                "order_date": order._dateCreated,
+                                "order_number": order.number,
+                                "reference": "Online Order",
+                                "shipping_method": order.shippingInfo.deliveryOption,
+                                "signature_required": false,
+                                "destination": {
+                                    "name": name,
+                                    "phone": order.shippingInfo.phone,
+                                    "street": order.shippingInfo.shipmentDetails.address.addressLine,
+                                    "suburb": order.shippingInfo.shipmentDetails.address.city,
+                                    "state": order.shippingInfo.shipmentDetails.address.state,
+                                    "post_code": order.shippingInfo.shipmentDetails.address.postalCode,
+                                    "country": order.shippingInfo.shipmentDetails.address.country,
+                                    "delivery_instructions": ""
+                                },
+                                "items": lineItems
+                            }
+                        }
+
+                        return fetch(url, {
+                                method: 'post',
+                                headers: headers,
+                                body: JSON.stringify(data)
+                            })
+                            .then(response => response.json());
+                    }
+
+                </code>
+            </pre>
+        </p>
+        <p>
+            <strong>STEP #3: </strong></br>
+            Add <code>events.js</code> file under <code>Backend</code> section, and add the code below:
+
+            <pre>
+                <code>
+                    import wixData from 'wix-data';
+                    import {createOrder} from 'backend/starShipIt';
+
+                    function getOrder(orderId) {
+                        return wixData.get("Stores/Orders", orderId);
+                    }
+
+                    export function wixStores_onNewOrder(event) {
+                        getOrder(event.orderId)
+                            .then(order => {
+                                createOrder(order)
+                                    .then(response => {
+                                        console.log(response);
+                                    })
+                                    .catch(err => {
+                                        console.log(err)
+                                    });
+                            });
+                    }
+                </code>
+            </pre>
+        </p>
+        <p>
+            <strong>STEP #4: </strong></br>
+            Publish.
+        </p>
+        <p>
+            <strong>STEP #5: </strong></br>
+            Test a purchase with StarShipIT.
+        </p>
+        <p>
+            <strong>Resources: </strong></br>
+            <ul>
+                <li><a href="https://www.starshipit.com/" target="_blank">Website: StarShipIT</a></li>
+                <li><a href="https://developers.starshipit.com/docs/services/58e5bb041164fe12c0b94ff1/operations/create-order" target="_blank">Create Order API</a></li>
+            </ul>
         </p>
     </body>
 </html>
