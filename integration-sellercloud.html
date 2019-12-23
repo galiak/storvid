@@ -136,7 +136,7 @@
                             return {
                                 "ID": 0, 
                                 "CustomerDetails": { // required
-                                    "ID": 0, //orderData.buyerInfo.id ? unique customer number in SellerCloud system
+                                    "ID": 0, 
                                     "Email": orderData.buyerInfo.email,
                                     "FirstName": orderData.buyerInfo.firstName,
                                     "LastName": orderData.buyerInfo.lastName,
@@ -178,10 +178,6 @@
                                 "ShippingMethodDetails": {
                                     "ShippingMethod": orderData.shippingInfo.deliveryOption,
                                     "ShippingFee": orderData.totals.shipping
-                                },
-                                "PaymentDetails": {
-                                    "Method": orderData.billingInfo.paymentMethod,
-                                    "TransactionID": orderData.billingInfo.externalTransactionId ? orderData.billingInfo.externalTransactionId : "MANUAL PAYMENT"
                                 },
                                 "Notes": [{
                                     "Note": orderData.buyerNote ? orderData.buyerNote : "",
