@@ -30,9 +30,9 @@
 
                     export function createOrder(order) {
                         const url = "https://api.starshipit.com/api/orders";
-                        let lineItems = [];
                         const name = order.shippingInfo.shipmentDetails.firstName + " " + order.shippingInfo.shipmentDetails.lastName;
-
+                        let lineItems = [];
+                        
                         const headers = {
                             "StarShipIT-Api-Key": "<em>YOUR_STARSHIPIT_API_KEY</em>",
                             "Content-type": "application/json",
