@@ -78,7 +78,7 @@
                         .then((order) => {
                             console.log('order=', order);
                             ClickID = session.getItem('sasId');
-                            const sasPixel = 'https://www.shareasale.com/sale.cfm?tracking=' + order._id +'&amount=' + order.totals.subtotal +'&merchantID=' + merchantID + '&transtype=sale&sscidmode=6&sscid=' + ClickID
+                            const sasPixel = 'https://www.shareasale.com/sale.cfm?tracking=' + order.number +'&amount=' + order.totals.subtotal +'&merchantID=' + merchantID + '&transtype=sale&sscidmode=6&sscid=' + ClickID
                             $w('#sasImage').src = sasPixel;
                         });
                  });                 
