@@ -17,23 +17,20 @@
         </p>
         <p>
             <strong>STEP #2: </strong></br>
-            Add the code below to the <code>Product</code> page code panel
+            Add the code below to the 'landing page' (tipically the home page) code panel
             <figure>
                 <img src="images/general/general-product-code-panel.png" />
             </figure>
             <pre>
               <code>
-                  import wixLocation from 'wix-location';
-                  import {session} from 'wix-storage';
-              </code>
-            </pre>
-            <pre>
-              <code>
-                  $w.onReady(async function () {
+                import {session} from 'wix-storage';
+                import wixLocation from 'wix-location';
+                
+                $w.onReady(function () {
                     session.clear();
                     let sasId = wixLocation.query;
-                    session.setItem("sasId", sasId.sscid);
-                 });                 
+                    session.setItem('sasId', sasId.sscid);
+                });              
               </code>
             </pre>
         </p>
@@ -64,24 +61,22 @@
             </figure>
             <pre>
               <code>
-                  import wixStores from 'wix-stores';
-                  import {session} from 'wix-storage';
-                  
-                  const merchantID = <em>YOUR_MERCHANT_ID</em>;
-                  let ClickID = '';                  
-              </code>
-            </pre>
-            <pre>
-              <code>
-                  $w.onReady(function () {
+                import {session} from 'wix-storage';
+
+                const merchantID = <em>'Your_SaS_Merchant_ID'</em>;
+                let ClickID = '';
+                
+                $w.onReady(function () {
+                    console.log('session', session.getItem('sasId'));
+                
                     $w('#thankYouPage1').getOrder()
-                        .then((order) => {
-                            console.log('order=', order);
-                            ClickID = session.getItem('sasId');
-                            const sasPixel = 'https://www.shareasale.com/sale.cfm?tracking=' + order.number +'&amount=' + order.totals.subtotal +'&merchantID=' + merchantID + '&transtype=sale&sscidmode=6&sscid=' + ClickID
-                            $w('#sasImage').src = sasPixel;
-                        });
-                 });                 
+                    .then(async result => {
+                        console.log('order=', result); // this logs all the details of the order available on the 'thank you page'
+                        ClickID = session.getItem('sasId');
+                        const sasPixel = 'https://www.shareasale.com/sale.cfm?tracking=' + result.number +'&amount=' + result.totals.subtotal +'&merchantID=' + merchantID + '&transtype=sale&sscidmode=6&sscid=' + ClickID;
+                        $w('#sasImage').src = sasPixel;
+                    });    
+                });                
               </code>
             </pre>
         </p>
